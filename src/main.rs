@@ -1,4 +1,5 @@
 use nannou::prelude::*;
+use rayon::prelude::*;
 use std::f32::consts::PI;
 
 const BALL_COUNT: usize = 5;
@@ -61,6 +62,31 @@ impl Ball {
             1.0
         };
     }
+
+    fn collide(&mut self, other: &mut Ball) {
+        let distance = self.position.distance(other.position);
+        let radii_sum = 20.0 * 2.0; // Assuming balls have the same radius, which is 20.0
+
+        if distance < radii_sum {
+            let collision_vector = self.position - other.position;
+            let normal = collision_vector.normalize();
+
+            // Calculate the response velocities
+            let self_velocity = self.velocity.dot(normal) * normal;
+            let other_velocity = other.velocity.dot(normal) * normal;
+
+            // Swap the velocities
+            self.velocity += other_velocity - self_velocity;
+            other.velocity += self_velocity - other_velocity;
+
+            // Reposition the balls to avoid overlapping
+            let overlap = radii_sum - distance;
+            let correction = normal * (overlap / 2.0);
+            self.position += correction;
+            other.position -= correction;
+        }
+    }
+
 }
 
 fn main() {
@@ -109,8 +135,18 @@ fn model(app: &App) -> Model {
 
 fn update(_app: &App, model: &mut Model, _update: Update) {
     let win_rect = _app.window_rect();
-    for ball in &mut model.balls {
+    model.balls.par_iter_mut().for_each(|ball| {
         ball.update(&win_rect);
+    });
+
+    // Sequentially check for collisions between balls
+    for i in 0..model.balls.len() {
+        let (left, right) = model.balls.split_at_mut(i + 1);
+        if let Some(ball_i) = left.last_mut() {
+            for ball_j in right.iter_mut() {
+                ball_i.collide(ball_j);
+            }
+        }
     }
 }
 
