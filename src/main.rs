@@ -8,25 +8,25 @@ const BALL_SPEED: f32 = 3.0;
 struct Ball {
     position: Point2,
     velocity: Vec2,
-    color: Rgb,
-    color_change_speed: Rgb,
-    color_change_direction: Rgb,
+    color: Hsv,
+    hue_change_speed: f32,
+    hue_change_direction: f32,
 }
 
 impl Ball {
     fn new(
         position: Point2,
         velocity: Vec2,
-        color: Rgb,
-        color_change_speed: Rgb,
-        color_change_direction: Rgb,
+        color: Hsv,
+        hue_change_speed: f32,
+        hue_change_direction: f32,
     ) -> Self {
         Ball {
             position,
             velocity,
             color,
-            color_change_speed,
-            color_change_direction,
+            hue_change_speed,
+            hue_change_direction,
         }
     }
 
@@ -40,27 +40,12 @@ impl Ball {
         if self.position.y < win_rect.bottom() || self.position.y > win_rect.top() {
             self.velocity.y = -self.velocity.y;
         }
-        // Update the color
-        self.color.red += self.color_change_speed.red * self.color_change_direction.red;
-        self.color.green += self.color_change_speed.green * self.color_change_direction.green;
-        self.color.blue += self.color_change_speed.blue * self.color_change_direction.blue;
 
-        // Reverse color change direction if the color component reaches the minimum or maximum value
-        self.color_change_direction.red *= if self.color.red <= 0.0 || self.color.red >= 1.0 {
-            -1.0
-        } else {
-            1.0
-        };
-        self.color_change_direction.green *= if self.color.green <= 0.0 || self.color.green >= 1.0 {
-            -1.0
-        } else {
-            1.0
-        };
-        self.color_change_direction.blue *= if self.color.blue <= 0.0 || self.color.blue >= 1.0 {
-            -1.0
-        } else {
-            1.0
-        };
+        // Update the hue
+        self.color.hue += self.hue_change_speed * self.hue_change_direction;
+
+        // Wrap the hue value around if it goes outside the range [0.0, 360.0)
+        // self.color.hue = (self.color.hue + 360.0) % 360.0;
     }
 
     fn collide(&mut self, other: &mut Ball) {
@@ -86,7 +71,6 @@ impl Ball {
             other.position -= correction;
         }
     }
-
 }
 
 fn main() {
@@ -105,27 +89,25 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    let balls = (0..BALL_COUNT)
-        .map(|_| {
+ let balls = (0..BALL_COUNT)
+        .map(|i| {
             let position = random_range2(-400.0, 400.0, -300.0, 300.0);
             let angle = random_range(0.0, 2.0 * PI);
             let velocity = Vec2::new(angle.cos() * BALL_SPEED, angle.sin() * BALL_SPEED);
 
-            // Generate a random color for each ball
-            let color = rgb(random_f32(), random_f32(), random_f32());
-            let color_change_speed = rgb(0.005, 0.005, 0.005);
-            let color_change_direction = rgb(
-                if random::<bool>() { 1.0 } else { -1.0 },
-                if random::<bool>() { 1.0 } else { -1.0 },
-                if random::<bool>() { 1.0 } else { -1.0 },
-            );
+            // Generate a rainbow-like color for each ball with a random offset
+            let hue_offset = random_range(0.0, 1.0 / BALL_COUNT as f32);
+            let hue = (i as f32 / BALL_COUNT as f32 + hue_offset).fract();
+            let color = hsv(hue, 1.0, 1.0);
+            let hue_change_speed = 0.001;
+            let hue_change_direction = if random::<bool>() { 1.0 } else { -1.0 };
 
             Ball::new(
                 position,
                 velocity,
                 color,
-                color_change_speed,
-                color_change_direction,
+                hue_change_speed,
+                hue_change_direction,
             )
         })
         .collect();
@@ -140,6 +122,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
     });
 
     // Sequentially check for collisions between balls
+    // Its hard to parallelize this due to the mutable references
     for i in 0..model.balls.len() {
         let (left, right) = model.balls.split_at_mut(i + 1);
         if let Some(ball_i) = left.last_mut() {
@@ -159,13 +142,19 @@ fn view(app: &App, model: &Model, frame: Frame) {
         draw.ellipse()
             .x_y(ball.position.x, ball.position.y)
             .radius(30.0) // Increase the radius to create a glow around the ball
-            .color(rgba(ball.color.red, ball.color.green, ball.color.blue, 0.2));
+            .color(hsva(
+                ball.color.hue.into(),
+                ball.color.saturation,
+                ball.color.value,
+                0.1,
+            ));
 
-        // Draw the ball
+        // Draw the ball with the updated hue value
+        let ball_color = hsv(ball.color.hue.into(), ball.color.saturation, ball.color.value);
         draw.ellipse()
             .x_y(ball.position.x, ball.position.y)
             .radius(20.0)
-            .color(ball.color);
+            .color(ball_color);
     }
 
     draw.to_frame(app, &frame).unwrap();
@@ -176,4 +165,3 @@ fn random_range2(min_x: f32, max_x: f32, min_y: f32, max_y: f32) -> Point2 {
     let y = random_range(min_y, max_y);
     pt2(x, y)
 }
-
