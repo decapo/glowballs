@@ -4,6 +4,7 @@ use std::f32::consts::PI;
 
 const BALL_COUNT: usize = 5;
 const BALL_SPEED: f32 = 3.0;
+const BALL_RADIUS: f32 = 20.0;
 
 struct Ball {
     position: Point2,
@@ -50,7 +51,7 @@ impl Ball {
 
     fn collide(&mut self, other: &mut Ball) {
         let distance = self.position.distance(other.position);
-        let radii_sum = 20.0 * 2.0; // Assuming balls have the same radius, which is 20.0
+        let radii_sum = BALL_RADIUS * 2.0;
 
         if distance < radii_sum {
             let collision_vector = self.position - other.position;
@@ -89,13 +90,12 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
- let balls = (0..BALL_COUNT)
+    let balls = (0..BALL_COUNT)
         .map(|i| {
             let position = random_range2(-400.0, 400.0, -300.0, 300.0);
             let angle = random_range(0.0, 2.0 * PI);
             let velocity = Vec2::new(angle.cos() * BALL_SPEED, angle.sin() * BALL_SPEED);
 
-            // Generate a rainbow-like color for each ball with a random offset
             let hue_offset = random_range(0.0, 1.0 / BALL_COUNT as f32);
             let hue = (i as f32 / BALL_COUNT as f32 + hue_offset).fract();
             let color = hsv(hue, 1.0, 1.0);
@@ -141,7 +141,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         // Draw the glowing effect
         draw.ellipse()
             .x_y(ball.position.x, ball.position.y)
-            .radius(30.0) // Increase the radius to create a glow around the ball
+            .radius(BALL_RADIUS * 1.3) // Increase the radius to create a glow around the ball
             .color(hsva(
                 ball.color.hue.into(),
                 ball.color.saturation,
@@ -150,10 +150,14 @@ fn view(app: &App, model: &Model, frame: Frame) {
             ));
 
         // Draw the ball with the updated hue value
-        let ball_color = hsv(ball.color.hue.into(), ball.color.saturation, ball.color.value);
+        let ball_color = hsv(
+            ball.color.hue.into(),
+            ball.color.saturation,
+            ball.color.value,
+        );
         draw.ellipse()
             .x_y(ball.position.x, ball.position.y)
-            .radius(20.0)
+            .radius(BALL_RADIUS)
             .color(ball_color);
     }
 
