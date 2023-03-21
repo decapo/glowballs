@@ -2,9 +2,16 @@ use nannou::prelude::*;
 use rayon::prelude::*;
 use std::f32::consts::PI;
 
-const BALL_COUNT: usize = 5;
+const BALL_COUNT: usize = 1000;
 const BALL_SPEED: f32 = 3.0;
-const BALL_RADIUS: f32 = 20.0;
+const BALL_RADIUS: f32 = 5.0;
+
+fn main() {
+    nannou::app(model)
+        .update(update)
+        .loop_mode(LoopMode::RefreshSync)
+        .run();
+}
 
 struct Ball {
     position: Point2,
@@ -72,13 +79,6 @@ impl Ball {
             other.position -= correction;
         }
     }
-}
-
-fn main() {
-    nannou::app(model)
-        .update(update)
-        .loop_mode(LoopMode::RefreshSync)
-        .run();
 }
 
 struct Model {
