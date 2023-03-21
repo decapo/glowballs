@@ -75,7 +75,10 @@ impl Ball {
 }
 
 fn main() {
-    nannou::app(model).update(update).run();
+    nannou::app(model)
+        .update(update)
+        .loop_mode(LoopMode::RefreshSync)
+        .run();
 }
 
 struct Model {
@@ -84,7 +87,7 @@ struct Model {
 
 fn model(app: &App) -> Model {
     app.new_window()
-        .size(800, 600)
+        .size(1200, 800)
         .title("Bouncing Balls")
         .view(view)
         .build()
