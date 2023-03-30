@@ -2,9 +2,9 @@ use nannou::prelude::*;
 use rayon::prelude::*;
 use std::f32::consts::PI;
 
-const BALL_COUNT: usize = 1000;
-const BALL_SPEED: f32 = 3.0;
-const BALL_RADIUS: f32 = 5.0;
+const BALL_COUNT: usize = 100;
+const BALL_SPEED: f32 = 2.0;
+const BALL_RADIUS: f32 = 15.0;
 
 fn main() {
     nannou::app(model)
