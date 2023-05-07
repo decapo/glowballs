@@ -2,9 +2,9 @@ use nannou::prelude::*;
 use rayon::prelude::*;
 use std::f32::consts::PI;
 
-const BALL_COUNT: usize = 100;
+const BALL_COUNT: usize = 400;
 const BALL_SPEED: f32 = 2.0;
-const BALL_RADIUS: f32 = 15.0;
+const BALL_RADIUS: f32 = 8.0;
 
 fn main() {
     nannou::app(model)
@@ -41,11 +41,15 @@ impl Ball {
     fn update(&mut self, win_rect: &Rect) {
         self.position += self.velocity;
 
-        if self.position.x < win_rect.left() || self.position.x > win_rect.right() {
+        if self.position.x < win_rect.left() + BALL_RADIUS
+            || self.position.x > win_rect.right() - BALL_RADIUS
+        {
             self.velocity.x = -self.velocity.x;
         }
 
-        if self.position.y < win_rect.bottom() || self.position.y > win_rect.top() {
+        if self.position.y < win_rect.bottom() + BALL_RADIUS
+            || self.position.y > win_rect.top() - BALL_RADIUS
+        {
             self.velocity.y = -self.velocity.y;
         }
 
